@@ -1,11 +1,12 @@
 #include <stdio.h>
-#include <string.h> // Inclui a biblioteca de manipulação de strings, como strcpy e strlen
+#include <string.h>  // Inclui a biblioteca de manipulação de strings, como strcpy e strlen
+#include <windows.h> // Só pra eu usar o sleep()
 
 #include "models/clientes.h"  // Inclui o arquivo de cabeçalho "clientes.h" que contém a definição da estrutura "clientes"
 #include "models/produtos.h"  // Inclui o arquivo de cabeçalho "produtos.h" que contém a definição da estrutura "produtos"
 #include "models/carrinhos.h" // Inclui o arquivo de cabeçalho "carrinhos.h" que contém a definição da estrutura "carrinhos"
 
-int geraCodigoCliente(double cpf); //O codigo do cliente sao os 6 primeiros digitos do cpf
+int geraCodigoCliente(double cpf); // O codigo do cliente sao os 6 primeiros digitos do cpf
 
 void mostraMenuInicial() // Função que exibe o menu inicial do programa ("void" indica que a função não retorna nenhum valor")
 {
@@ -35,6 +36,22 @@ void listarClientes(struct clientes cliente[3], int qtdClientes) // Função que
         printf("Telefone movel: %s\n", cliente[i].tel.movel);
     }
 }
+
+void listarProdutoss(struct produtos produto[10], int qtdProdutos)
+{
+    int i;
+
+    for (i = 0; i < qtdProdutos; i++)
+    {
+        printf("\n===== PRODUTO %d =====\n", i + 1);
+        printf("Marca: %s\n", produto[i].modelo.marca);
+        printf("Modelo: %s\n", produto[i].modelo.modelo);
+        printf("Codigo: %d\n", produto[i].codigo);
+        printf("Valor: %.2lf\n", produto[i].valor);
+        printf("Quantidade: %d\n", produto[i].quantidade);
+    }
+}
+
 struct clientes cadastrarCliente()
 {                                // só declarei uma função
     struct clientes novoCliente; // uma variável capaz de armazenar os dados do cliente
@@ -43,7 +60,7 @@ struct clientes cadastrarCliente()
     scanf(" %49[^\n]", novoCliente.nome); // esse "%49[^\n]"" permite ler até 49 caracteres, incluindo espaços
 
     printf("Digite o CPF: ");
-    scanf("%lf", &novoCliente.cpf);  //%lf é pra double, o ideal seria &s, mas o prof quer o cpf como double
+    scanf("%lf", &novoCliente.cpf);                          //%lf é pra double, o ideal seria &s, mas o prof quer o cpf como double
     novoCliente.codigo = geraCodigoCliente(novoCliente.cpf); // calma calabreo, expliquei abaixo.
 
     printf("Digite o sexo (M/F): ");
@@ -58,6 +75,35 @@ struct clientes cadastrarCliente()
     return novoCliente; // retorna nosso novo cliente
 }
 
+struct produtos cadastrarProduto()
+{
+    struct produtos novoProduto; // uma variável capaz de armazenar os dados do produto
+
+    printf("Digite a marca do produto: ");
+    scanf(" %19[^\n]", novoProduto.modelo.marca);
+
+    printf("Digite o modelo do produto: ");
+    scanf(" %19[^\n]", novoProduto.modelo.modelo);
+
+    printf("Digite o valor do produto: ");
+    scanf("%lf", &novoProduto.valor);
+    printf("Digite a quantidade do produto: ");
+
+    scanf("%d", &novoProduto.quantidade);
+
+    char nomeProduto[5]; // pra gerar o codigo do produto, q sao 4 caracteres + o '\0'
+
+    nomeProduto[0] = novoProduto.modelo.marca[0];  // C1
+    nomeProduto[1] = novoProduto.modelo.marca[1];  // C2
+    nomeProduto[2] = novoProduto.modelo.modelo[0]; // C3
+    nomeProduto[3] = novoProduto.modelo.modelo[1]; // C4
+    nomeProduto[4] = '\0';                         // Adiciona o caractere nulo para indicar o final da string
+
+    novoProduto.codigo = geraCodigoProduto(nomeProduto); // chama a função que gera o codigo do produto
+
+    return novoProduto;
+}
+
 /*o prof quer só o 6 primeiros digitos do cpf,
 entao quando o usuario digitar os 11 digito do cpf, dividir por 100000,
 dai a virgula vai andar 5 casas para a esquerda, e o tipo int so vai pegar os 6 digitos do cpf.*/
@@ -69,15 +115,42 @@ int geraCodigoCliente(double cpf)
     return codigo;
 }
 
+/* O prof determinou uma formula pra gerar o código do produto usando os dois primeiros caracteres
+da marca e os dois do primeiro modelo.
+
+Por exemplo, DELL + PRECISION:
+- C1 = D (68) //esses numeros sao os valores da tabela ASCII
+- C2 = E (69)
+- C3 = P (80)
+- C4 = R (82)
+
+
+formula hash =
+68 × 31^3 + 69 × 31^2 + 80 × 31^1 + 82 × 31^0 =
+68 × 29791 + 69 × 961 + 80 × 31 + 82 × 1 =
+2029948 + 66209 + 2480 + 82 =
+2094659 (codigo do produto)
+*/
+int geraCodigoProduto(char nomeProduto[30])
+{
+    int codigo;
+
+    codigo = nomeProduto[0] * 29791 + nomeProduto[1] * 961 + nomeProduto[2] * 31 + nomeProduto[3] * 1;
+
+    return codigo;
+}
+
 int main()
 {
 
-    struct clientes cliente[3];   // iniciando a estrutura de clientes com um array de 3 elementos
-    struct produtos produto[10];   // iniciando a estrutura de produtos com um array de 10 elementos
-    struct carrinhos carrinho; // iniciando a estrutura de carrinhos
+    struct clientes cliente[3];         // iniciando a estrutura de clientes com um array de 3 elementos
+    struct produtos produto[10];        // iniciando a estrutura de produtos com um array de 10 elementos
+    struct carrinhos carrinho;          // iniciando a estrutura de carrinhos
+    struct produtos cadastrarProduto(); // só declarei uma função
 
     int opcao;
     int qtdClientes = 0;
+    int qtdProdutos = 0;
 
     do
     {
@@ -100,15 +173,31 @@ int main()
 
         case 2: // Cadastro de produto
             printf("\n===== CADASTRO DE PRODUTO =====\n");
+            if (qtdProdutos < 10)
+            {
+                produto[qtdProdutos] = cadastrarProduto();
+                qtdProdutos++;
+            }
+            else
+                printf("Limite de produtos atingido!\n");
             break;
 
         case 3: // Listagem de clientes
             printf("\n===== LISTA DE CLIENTES =====\n");
-            listarClientes(cliente, qtdClientes); //a função que criamos la em cima, prof que pediu pra chamar função
+            listarClientes(cliente, qtdClientes); // a função que criamos la em cima, prof que pediu pra chamar função
+            printf("\nPressione ENTER para continuar...");
+            getchar();  // Limpa o buffer do teclado (aquele /n que fica sobrando do scanf)
+            getchar();  // Pra esperar o usuário apertar ENTER antes de voltar ao menu
+            Sleep(500); // Pausa de 0.5 segundos antes de voltar ao menu
             break;
 
         case 4: // Listagem de produtos
             printf("\n===== LISTA DE PRODUTOS =====\n");
+            listarProdutoss(produto, qtdProdutos); // a função que criamos la em cima
+            printf("\nPressione ENTER para continuar...");
+            getchar();
+            getchar();
+            Sleep(500);
             break;
 
         case 5: // Efetuar venda
