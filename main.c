@@ -52,6 +52,8 @@ void listarProdutoss(struct produtos produto[10], int qtdProdutos)
     }
 }
 
+void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struct carrinhos carrinho, int qtdClientes, int qtdProdutos);
+
 struct clientes cadastrarCliente()
 {                                // só declarei uma função
     struct clientes novoCliente; // uma variável capaz de armazenar os dados do cliente
@@ -87,8 +89,8 @@ struct produtos cadastrarProduto()
 
     printf("Digite o valor do produto: ");
     scanf("%lf", &novoProduto.valor);
-    printf("Digite a quantidade do produto: ");
 
+    printf("Digite a quantidade do produto: ");
     scanf("%d", &novoProduto.quantidade);
 
     char nomeProduto[5]; // pra gerar o codigo do produto, q sao 4 caracteres + o '\0'
@@ -103,6 +105,19 @@ struct produtos cadastrarProduto()
 
     return novoProduto;
 }
+
+struct clientes localizaCliente(int codigo, struct clientes cliente[3], int qtdClientes)
+{
+    int i;
+
+    for (i = 0; i < qtdClientes; i++)
+    {
+        if (cliente[i].codigo == codigo)
+        {
+            return cliente[i];
+        }
+    }
+};
 
 /*o prof quer só o 6 primeiros digitos do cpf,
 entao quando o usuario digitar os 11 digito do cpf, dividir por 100000,
@@ -138,6 +153,63 @@ int geraCodigoProduto(char nomeProduto[30])
     codigo = nomeProduto[0] * 29791 + nomeProduto[1] * 961 + nomeProduto[2] * 31 + nomeProduto[3] * 1;
 
     return codigo;
+}
+
+struct produtos localizaProduto(int codigo, struct produtos produto[50], int qtdProdutos)
+{
+    int i;
+
+    for (i = 0; i < qtdProdutos; i++)
+    {
+        if(produto[i].codigo == codigo)
+        {
+            return produto[i];
+        }
+    }
+
+    struct produtos produtoNaoEncontrado = {0}; // Retorna um produto com código 0 para indicar que não foi encontrado
+    return produtoNaoEncontrado;
+}
+
+void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struct carrinhos carrinho, int qtdClientes, int qtdProdutos)
+{
+    int codigoCliente;
+    struct produtos produtoEncontrado;
+
+    printf("Digite o codigo do cliente: ");
+    scanf("%d", &codigoCliente);
+
+    struct clientes clienteEncontrado;
+    clienteEncontrado = localizaCliente(codigoCliente, cliente, qtdClientes);
+
+    if (clienteEncontrado.codigo == 0)
+    {
+        printf("Cliente nao encontrado!\n");
+        return;
+    }
+
+    printf("Cliente encontrado: %s\n", clienteEncontrado.nome);
+
+    int qtdItens = 0;
+    int codigoProduto;
+    int quantidade;
+
+    while(qtdItens < 3)
+    {
+        printf("Digite o codigo do produto (ou 0 para finalizar): ");
+        scanf("%d", &codigoProduto);
+
+        if (codigoProduto == 0)
+            break;
+
+        produtoEncontrado = localizaProduto(codigoProduto, produto, qtdProdutos);
+
+        if (produtoEncontrado.codigo == 0)
+        {
+            printf("Produto nao encontrado!\n");
+            continue;
+        }
+    }
 }
 
 int main()
@@ -202,6 +274,7 @@ int main()
 
         case 5: // Efetuar venda
             printf("\n===== EFETUAR VENDA =====\n");
+            efetuarVenda(cliente, produto, carrinho, qtdClientes, qtdProdutos);
             break;
 
         case 0: // Sair do programa
