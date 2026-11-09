@@ -117,7 +117,26 @@ struct clientes localizaCliente(int codigo, struct clientes cliente[3], int qtdC
             return cliente[i];
         }
     }
+
+    struct clientes clienteNaoEncontrado = {0}; // Retorna um cliente com código 0 para indicar que não foi encontrado
+    return clienteNaoEncontrado;
 };
+
+struct produtos localizaProduto(int codigo, struct produtos produto[10], int qtdProdutos)
+{
+    int i;
+
+    for (i = 0; i < qtdProdutos; i++)
+    {
+        if (produto[i].codigo == codigo)
+        {
+            return produto[i];
+        }
+    }
+
+    struct produtos produtoNaoEncontrado = {0}; // Retorna um produto com código 0 para indicar que não foi encontrado
+    return produtoNaoEncontrado;
+}
 
 /*o prof quer só o 6 primeiros digitos do cpf,
 entao quando o usuario digitar os 11 digito do cpf, dividir por 100000,
@@ -161,7 +180,7 @@ struct produtos localizaProduto(int codigo, struct produtos produto[50], int qtd
 
     for (i = 0; i < qtdProdutos; i++)
     {
-        if(produto[i].codigo == codigo)
+        if (produto[i].codigo == codigo)
         {
             return produto[i];
         }
@@ -174,6 +193,9 @@ struct produtos localizaProduto(int codigo, struct produtos produto[50], int qtd
 void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struct carrinhos carrinho, int qtdClientes, int qtdProdutos)
 {
     int codigoCliente;
+    carrinho.subtotal = 0;
+    carrinho.desconto = 0;
+    carrinho.total = 0;
     struct produtos produtoEncontrado;
 
     printf("Digite o codigo do cliente: ");
@@ -194,7 +216,7 @@ void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struc
     int codigoProduto;
     int quantidade;
 
-    while(qtdItens < 3)
+    while (qtdItens < 3)
     {
         printf("Digite o codigo do produto (ou 0 para finalizar): ");
         scanf("%d", &codigoProduto);
@@ -209,7 +231,30 @@ void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struc
             printf("Produto nao encontrado!\n");
             continue;
         }
+
+        printf("Produto: %s %s\n",
+               produtoEncontrado.modelo.marca,
+               produtoEncontrado.modelo.modelo);
+        printf("Quantidade desejada: ");
+        scanf("%d", &quantidade);
+
+        if (quantidade <= 0 || quantidade > produtoEncontrado.quantidade)
+        {
+            printf("Quantidade indisponivel! Estoque atual: %d\n", produtoEncontrado.quantidade);
+            continue;
+        }
+
+        carrinho.cliente = clienteEncontrado;           // começamos a mexer no carrinho, adicionando nosso cliente
+        carrinho.produto[qtdItens] = produtoEncontrado; // adicionando o produto no carrinho
+        carrinho.quantidade[qtdItens] = quantidade;     // adicionando a quantidade do produto no carrinho
+
+        qtdItens++;
     }
+}
+
+double calculaSubtotal(struct carrinhos carrinho)
+{
+    for(int i = 0; i < )
 }
 
 int main()
