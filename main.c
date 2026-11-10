@@ -193,9 +193,9 @@ struct produtos localizaProduto(int codigo, struct produtos produto[50], int qtd
 void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struct carrinhos carrinho, int qtdClientes, int qtdProdutos)
 {
     int codigoCliente;
-    carrinho.subtotal = 0;
+    carrinho.subtotal = calculaSubtotal(carrinho);
+    carrinho.total = calculaTotal(carrinho.subtotal, carrinho.desconto);
     carrinho.desconto = 0;
-    carrinho.total = 0;
     struct produtos produtoEncontrado;
 
     printf("Digite o codigo do cliente: ");
@@ -252,9 +252,22 @@ void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struc
     }
 }
 
-double calculaSubtotal(struct carrinhos carrinho)
+double calculaSubtotal(struct carrinhos carrinho) // funçao q calcula o valor do carrinho
 {
-    for(int i = 0; i < )
+    double subtotal = 0;
+
+    for (int i = 0; i < 3; i++)
+        subtotal += carrinho.produto[i].valor * carrinho.quantidade[i];
+
+    return subtotal;
+}
+
+double calculaTotal(double subtotal, double desconto) //calcula o total com desconto
+{
+    double valorDesconto = subtotal * desconto / 100;
+    double total = subtotal - valorDesconto;
+
+    return total;
 }
 
 int main()
