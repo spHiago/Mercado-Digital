@@ -6,7 +6,15 @@
 #include "models/produtos.h"  // Inclui o arquivo de cabeçalho "produtos.h" que contém a definição da estrutura "produtos"
 #include "models/carrinhos.h" // Inclui o arquivo de cabeçalho "carrinhos.h" que contém a definição da estrutura "carrinhos"
 
+
 int geraCodigoCliente(double cpf); // O codigo do cliente sao os 6 primeiros digitos do cpf
+int geraCodigoProduto(char nomeProduto[30]);
+
+double calculaSubtotal(struct carrinhos carrinho);
+double calculaTotal(double subtotal, double desconto);
+
+void listarCarrinho(struct carrinhos carrinho);
+void finalizarVenda(struct carrinhos carrinho);
 
 void mostraMenuInicial() // Função que exibe o menu inicial do programa ("void" indica que a função não retorna nenhum valor")
 {
@@ -93,7 +101,7 @@ struct produtos cadastrarProduto()
     printf("Digite a quantidade do produto: ");
     scanf("%d", &novoProduto.quantidade);
 
-    char nomeProduto[5]; // pra gerar o codigo do produto, q sao 4 caracteres + o '\0'
+    char nomeProduto[30]; // pra gerar o codigo do produto, q sao 4 caracteres + o '\0'
 
     nomeProduto[0] = novoProduto.modelo.marca[0];  // C1
     nomeProduto[1] = novoProduto.modelo.marca[1];  // C2
@@ -174,28 +182,9 @@ int geraCodigoProduto(char nomeProduto[30])
     return codigo;
 }
 
-struct produtos localizaProduto(int codigo, struct produtos produto[50], int qtdProdutos)
-{
-    int i;
-
-    for (i = 0; i < qtdProdutos; i++)
-    {
-        if (produto[i].codigo == codigo)
-        {
-            return produto[i];
-        }
-    }
-
-    struct produtos produtoNaoEncontrado = {0}; // Retorna um produto com código 0 para indicar que não foi encontrado
-    return produtoNaoEncontrado;
-}
-
 void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struct carrinhos carrinho, int qtdClientes, int qtdProdutos)
 {
     int codigoCliente;
-    carrinho.subtotal = calculaSubtotal(carrinho);
-    carrinho.total = calculaTotal(carrinho.subtotal, carrinho.desconto);
-    carrinho.desconto = 0;
     struct produtos produtoEncontrado;
 
     printf("Digite o codigo do cliente: ");
@@ -215,6 +204,9 @@ void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struc
     int qtdItens = 0;
     int codigoProduto;
     int quantidade;
+
+    for (int i = 0; i < 3; i++)
+        carrinho.quantidade[i] = 0;
 
     while (qtdItens < 3)
     {
@@ -250,6 +242,57 @@ void efetuarVenda(struct clientes cliente[3], struct produtos produto[10], struc
 
         qtdItens++;
     }
+
+    if (qtdItens == 0)
+    {
+        printf("Nenhum produto foi adicionado. Venda cancelada!\n");
+        return;
+    }
+
+    carrinho.desconto = 0;
+    do // Pede o desconto
+    {
+        printf("Digite o desconto: \n");
+        scanf("%lf", &carrinho.desconto);
+
+        if (carrinho.desconto < 0 || carrinho.desconto > 100)
+        {
+            printf("Desconto inválido, tente novamente (entre 0 e 100)");
+        }
+
+    } while (carrinho.desconto < 0 || carrinho.desconto > 100);
+
+    carrinho.subtotal = calculaSubtotal(carrinho);
+    printf("Subtotal da compra: R$ %.2lf\n", carrinho.subtotal);
+
+    carrinho.total = calculaTotal(carrinho.subtotal, carrinho.desconto);
+    printf("Desconto aplicado: %.2lf\n", carrinho.desconto);
+    printf("Total da compra: R$ %.2lf\n", carrinho.total);
+
+    listarCarrinho(carrinho);
+
+    int confirmar;
+
+    printf("\nDeseja confirmar a venda? (1 - Sim / 0 - Nao): ");
+    scanf("%d", &confirmar);
+
+    if (confirmar != 1)
+    {
+        printf("Venda cancelada!\n");
+        return;
+    }
+
+    for (int i = 0; i < qtdProdutos; i++)
+    {
+        for (int j = 0; j < qtdItens; j++)
+        {
+            if (produto[i].codigo == carrinho.produto[j].codigo)
+            {
+                produto[i].quantidade -= carrinho.quantidade[j];
+            }
+        }
+    }
+    finalizarVenda(carrinho);
 }
 
 double calculaSubtotal(struct carrinhos carrinho) // funçao q calcula o valor do carrinho
@@ -257,17 +300,69 @@ double calculaSubtotal(struct carrinhos carrinho) // funçao q calcula o valor d
     double subtotal = 0;
 
     for (int i = 0; i < 3; i++)
-        subtotal += carrinho.produto[i].valor * carrinho.quantidade[i];
+    {
+        if (carrinho.quantidade[i] > 0)
+        {
+            subtotal += carrinho.produto[i].valor * carrinho.quantidade[i];
+        }
+    }
 
     return subtotal;
 }
 
-double calculaTotal(double subtotal, double desconto) //calcula o total com desconto
+double calculaTotal(double subtotal, double desconto) // calcula o total com desconto
 {
-    double valorDesconto = subtotal * desconto / 100;
+    double valorDesconto = subtotal * desconto / 100; //
     double total = subtotal - valorDesconto;
 
     return total;
+}
+
+void listarCarrinho(struct carrinhos carrinho)
+{
+
+    printf("\n");
+    printf("========================================\n");
+    printf("          RESUMO DA VENDA\n");
+    printf("========================================\n");
+
+    if (carrinho.quantidade[0] == 0 &&
+        carrinho.quantidade[1] == 0 &&
+        carrinho.quantidade[2] == 0)
+    {
+        printf("O carrinho esta vazio...\n");
+        return;
+    }
+
+    printf("Cliente: %s\n", carrinho.cliente.nome);
+
+    for (int i = 0; i < 3; i++)
+    {
+        if (carrinho.quantidade[i] > 0)
+        {
+            printf("Marca: %s\n", carrinho.produto[i].modelo.marca);
+            printf("Modelo: %s\n", carrinho.produto[i].modelo.modelo);
+            printf("Quantidade: %d\n", carrinho.quantidade[i]);
+            printf("Preço unitário: %.2lf\n", carrinho.produto[i].valor);
+        }
+    }
+
+    printf("----------------------------------------\n");
+    printf("Subtotal: R$ %.2lf\n", carrinho.subtotal);
+    printf("Desconto: %.2lf%%\n", carrinho.desconto);
+    printf("Total: R$ %.2lf\n", carrinho.total);
+    printf("========================================\n");
+}
+
+void finalizarVenda(struct carrinhos carrinho)
+{
+    printf("\n========================================\n");
+    printf("          VENDA FINALIZADA!\n");
+    printf("========================================\n");
+    printf("Cliente: %s\n", carrinho.cliente.nome);
+    printf("Valor recebido: R$ %.2lf\n", carrinho.total);
+    printf("Obrigado pela compra!\n");
+    printf("========================================\n");
 }
 
 int main()
@@ -276,7 +371,6 @@ int main()
     struct clientes cliente[3];         // iniciando a estrutura de clientes com um array de 3 elementos
     struct produtos produto[10];        // iniciando a estrutura de produtos com um array de 10 elementos
     struct carrinhos carrinho;          // iniciando a estrutura de carrinhos
-    struct produtos cadastrarProduto(); // só declarei uma função
 
     int opcao;
     int qtdClientes = 0;
